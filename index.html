@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Расчёт закупки, себестоимости и прибыли</title>
+<style>
+:root{
+  --bg:#f1f5f2; --card:#ffffff; --ink:#1f2d28; --muted:#6f8279;
+  --berry:#1f8a70; --berry-soft:#dcefe7; --blue:#34406b; --kraft:#c9a45c; --kraft-soft:#f6edd8;
+  --ok:#2f7d4f; --line:#dbe6e0; --red:#c8443a;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.4}
+.wrap{max-width:560px;margin:0 auto;padding:0 14px 96px}
+.hero{margin:0 -14px 14px;background:#dcefe7;border-radius:0 0 22px 22px;overflow:hidden}
+.hero svg{display:block;width:100%;height:auto}
+.ht{padding:2px 18px 16px;background:var(--ink);color:#fff;margin-top:-1px}
+h1{font-family:Georgia,"Times New Roman",serif;font-size:26px;margin:0;letter-spacing:-.5px;line-height:1.15}
+.ht p{margin:2px 0 0;color:#e6cfc6;font-size:14.5px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--ink);display:flex;z-index:5;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;color:#cdb9b1;padding:14px 4px 13px;font-size:15px;font-weight:600;border-top:3px solid transparent}
+nav button.on{color:#fff;border-top-color:var(--berry)}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+.bar{background-color:var(--ink);color:#fff;border-radius:14px;padding:18px 16px 16px;margin-bottom:14px;
+  background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);
+  background-size:44px 44px;background-position:-1px -1px}
+.bar .lab{font-size:14px;color:#e6cfc6}
+.bar .big{font-family:Georgia,serif;font-size:42px;font-weight:700;color:#a8ecd2;line-height:1.1;margin:2px 0 12px}
+.bar .big.neg{color:#ff8d8d}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.row3 div{background:rgba(255,255,255,.1);border-radius:9px;padding:8px 9px}
+.row3 b{display:block;font-size:16px}
+.row3 span{font-size:12.5px;color:#e6cfc6}
+.bar .per{margin-top:11px;font-size:14px;color:#f3e2db}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:10px}
+.card.done{opacity:.72}
+h2{font-family:Georgia,serif;font-size:20px;margin:20px 0 8px}
+label{display:block;font-size:13px;color:var(--muted);margin:0 0 3px}
+input,select{width:100%;font:inherit;padding:10px 10px;border:1.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);min-width:0}
+input:focus,select:focus{border-color:var(--berry);outline:none}
+input.bigin{font-size:26px;font-weight:700;font-family:Georgia,serif;padding:8px 10px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+.gap{margin-top:9px}
+.btn{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 14px;background:var(--berry);color:#fff;width:100%}
+.btn.ghost{background:var(--berry-soft);color:var(--berry)}
+.btn.small{width:auto;padding:8px 12px;font-size:14px}
+.btn.line{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.name{font-weight:700;font-size:17px}
+.muted{color:var(--muted);font-size:13.5px}
+.pos{color:var(--ok);font-weight:700}
+.neg{color:var(--red);font-weight:700}
+.acts{display:flex;gap:8px;margin-top:10px}
+.empty{text-align:center;color:var(--muted);padding:22px 10px;border:1.5px dashed var(--kraft);border-radius:12px;margin-bottom:10px}
+.line-item{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.line-item:last-child{border-bottom:0}
+.line-item .r{text-align:right;white-space:nowrap}
+.tot{display:flex;justify-content:space-between;font-weight:700;padding-top:10px;font-size:17px}
+.note{background:#fff7e8;border:1px solid #ecd6a8;border-radius:10px;padding:10px 12px;font-size:13.5px;margin-bottom:12px}
+.buy{margin-top:10px;background:var(--kraft-soft);border-left:4px solid var(--kraft);border-radius:8px;padding:8px 10px;font-size:14.5px;line-height:1.5}
+.pair{display:grid;grid-template-columns:1fr 92px;gap:8px}
+.namerow{display:grid;grid-template-columns:1fr 32px;gap:8px;align-items:center}
+.x{background:none;border:0;color:var(--muted);font-size:24px;line-height:1;padding:2px 6px}
+footer{margin-top:22px;display:flex;gap:8px;flex-wrap:wrap}
+@media (prefers-reduced-motion:no-preference){.btn{transition:transform .08s}.btn:active{transform:scale(.97)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <svg viewBox="0 0 360 150" role="img" aria-label="Абстрактный рисунок из круглых и листовых форм">
+      <defs>
+        <linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9f6f0"/><stop offset="1" stop-color="#cfe9de"/></linearGradient>
+        <g id="leaf"><path d="M0,0 C26,-34 74,-30 84,12 C44,32 8,22 0,0Z" fill="#2f9e7a"/><path d="M4,2 C30,0 56,2 80,12" stroke="#d6f2e7" stroke-width="2" fill="none" stroke-linecap="round" opacity=".8"/></g>
+      </defs>
+      <rect width="360" height="150" fill="url(#sg)"/>
+      <circle cx="46" cy="86" r="58" fill="#9fd8c2" opacity=".65"/>
+      <circle cx="122" cy="58" r="40" fill="#f2c879" opacity=".85"/>
+      <circle cx="205" cy="98" r="56" fill="#7cc4a8" opacity=".55"/>
+      <circle cx="262" cy="40" r="26" fill="#f0a98a" opacity=".8"/>
+      <circle cx="326" cy="104" r="40" fill="#bfe3d3" opacity=".9"/>
+      <use href="#leaf" transform="translate(240 92) rotate(-18)"/>
+      <use href="#leaf" transform="translate(40 40) rotate(28) scale(.7)"/>
+      <path d="M296 14 C306 30 306 44 296 52 C286 44 286 30 296 14Z" fill="#e58f6b"/>
+      <g fill="#1f2d28" opacity=".12">
+        <circle cx="20" cy="18" r="2.4"/><circle cx="36" cy="18" r="2.4"/><circle cx="52" cy="18" r="2.4"/><circle cx="68" cy="18" r="2.4"/>
+        <circle cx="20" cy="34" r="2.4"/><circle cx="36" cy="34" r="2.4"/><circle cx="52" cy="34" r="2.4"/><circle cx="68" cy="34" r="2.4"/>
+      </g>
+      <g fill="#c9a45c" opacity=".9"><ellipse cx="170" cy="30" rx="7" ry="3.5" transform="rotate(30 170 30)"/><ellipse cx="186" cy="20" rx="7" ry="3.5" transform="rotate(-20 186 20)"/><ellipse cx="180" cy="40" rx="7" ry="3.5" transform="rotate(70 180 40)"/><ellipse cx="108" cy="122" rx="7" ry="3.5" transform="rotate(-35 108 122)"/><ellipse cx="124" cy="132" rx="7" ry="3.5" transform="rotate(15 124 132)"/></g>
+      <path d="M0 132 C60 114 120 142 190 128 C250 116 300 136 360 122 V150 H0Z" fill="#1f8a70" opacity=".25"/>
+    </svg>
+    <div class="ht"><h1>Расчёт закупки, себестоимости и прибыли</h1><p>Впишите состав на 1 штуку и сколько нужно сделать, остальное посчитается само</p></div>
+  </header>
+  <div id="view"></div>
+</div>
+<nav>
+  <button data-tab="calc">Расчёт</button>
+  <button data-tab="orders">Заказы</button>
+</nav>
+
+<script>
+const KEY='trifle-kaifl-v2';
+const uid=()=>Math.random().toString(36).slice(2,9);
+const todayISO=()=>new Date().toISOString().slice(0,10);
+
+function defaults(){
+  return {batch:0, price:0, margin:0, ingredients:[], extras:[], orders:[]};
+}
+function load(){try{const r=localStorage.getItem(KEY);return r?JSON.parse(r):null}catch(e){return null}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+let S=load()||defaults();
+if(typeof S.batch!=='number')S.batch=0;
+if(typeof S.margin!=='number')S.margin=0;
+function migrate(){
+  S.ingredients.forEach(i=>{if(!UF[i.unit])i.unit='г';if(!i.packUnit||!UF[i.packUnit])i.packUnit=i.unit;if(!okUnits(i))i.packUnit=i.unit});
+}
+let tab='calc';
+let showDone=false;
+
+const rub=n=>(Math.round(n)).toLocaleString('ru-RU').replace(/\u00a0/g,' ')+' ₽';
+const num=n=>(Math.round(n*10)/10).toLocaleString('ru-RU');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const val=v=>{const n=parseFloat(String(v).replace(',','.'));return isFinite(n)&&n>=0?n:0};
+const dm=iso=>{const p=(iso||'').split('-');return p.length===3?p[2]+'.'+p[1]:''};
+
+/* ---------- расчёты ---------- */
+const UNITS=['мг','г','кг','мл','л','шт'];
+const UF={'мг':{f:'m',k:0.001},'г':{f:'m',k:1},'кг':{f:'m',k:1000},'мл':{f:'v',k:1},'л':{f:'v',k:1000},'шт':{f:'c',k:1}};
+const famUnits=u=>UNITS.filter(x=>UF[x].f===UF[u].f);
+const toBase=(n,u)=>n*UF[u].k;
+const num2=n=>(Math.round(n*100)/100).toLocaleString('ru-RU');
+function fmtAmt(base,u){
+  const f=UF[u].f;
+  if(f==='m'){ if(base>=1000) return num2(base/1000)+' кг'; if(base>0&&base<1) return num2(base*1000)+' мг'; return num2(base)+' г'; }
+  if(f==='v'){ if(base>=1000) return num2(base/1000)+' л'; return num2(base)+' мл'; }
+  return num2(base)+' шт';
+}
+function okUnits(i){return UF[i.unit]&&UF[i.packUnit]&&UF[i.unit].f===UF[i.packUnit].f}
+function ingUnitCost(i){ // цена за 1 базовую единицу (г, мл или шт)
+  if(!okUnits(i))return 0;
+  const pb=toBase(i.packSize,i.packUnit);
+  return pb>0?i.packPrice/pb:0;
+}
+function cpp(){
+  return S.ingredients.reduce((a,i)=>a+toBase(i.per,i.unit)*ingUnitCost(i),0)+S.extras.reduce((a,e)=>a+e.cost,0);
+}
+function calcAll(){
+  const q=S.batch;
+  const rows=S.ingredients.map(i=>{
+    const need=q*toBase(i.per,i.unit);
+    const bad=!okUnits(i);
+    const pb=bad?0:toBase(i.packSize,i.packUnit);
+    const packs=(pb>0&&need>0)?Math.ceil(need/pb-1e-9):0;
+    return {i,need,bad,pb,packs,bought:packs*pb,pay:packs*i.packPrice,use:need*ingUnitCost(i)};
+  });
+  const extras=S.extras.reduce((a,e)=>a+e.cost*q,0);
+  const use=rows.reduce((a,r)=>a+r.use,0)+extras;
+  const cash=rows.reduce((a,r)=>a+r.pay,0)+extras;
+  const rev=q*S.price;
+  return {q,rows,extras,use,cash,rev,profit:rev-use,per:cpp(),margin:rev>0?(rev-use)/rev*100:0};
+}
+const openO=()=>S.orders.filter(o=>!o.done);
+const doneO=()=>S.orders.filter(o=>o.done);
+function sums(list){
+  const q=list.reduce((a,o)=>a+o.qty,0);
+  const rev=list.reduce((a,o)=>a+o.qty*o.price,0);
+  const cost=q*cpp();
+  return {q,rev,cost,profit:rev-cost};
+}
+
+/* ---------- блоки с живым пересчётом ---------- */
+function barHTML(c){
+  const perProfit=S.price-c.per;
+  return `<div class="lab">Прибыль с партии из ${c.q} шт</div>
+    <div class="big ${c.profit<0?'neg':''}">${rub(c.profit)}</div>
+    <div class="row3">
+      <div><b>${rub(c.rev)}</b><span>выручка</span></div>
+      <div><b>${rub(c.use)}</b><span>себестоимость</span></div>
+      <div><b>${rub(c.cash)}</b><span>купить на</span></div>
+    </div>
+    <div class="per">1 шт: себестоимость ${rub(c.per)}, прибыль ${rub(perProfit)}, маржа ${num(c.q>0||S.price>0?(S.price>0?perProfit/S.price*100:0):0)}%</div>`;
+}
+function shopHTML(c){
+  if(!c.q) return `<div class="muted">Введите, сколько штук делаете, и здесь появится список закупки.</div>`;
+  let h='';
+  c.rows.forEach(r=>{
+    const i=r.i;
+    const right=r.packs?`<div class="name">${r.packs} уп.</div><div class="muted">${rub(r.pay)}</div>`:`<div class="muted">укажите фасовку</div>`;
+    h+=`<div class="line-item"><div><div class="name">${esc(i.name)}</div><div class="muted">нужно ${fmtAmt(r.need,i.unit)}${r.packs?`, упаковка ${num2(i.packSize)} ${i.packUnit}`:''}</div></div>
+    <div class="r">${right}</div></div>`;
+  });
+  S.extras.forEach(e=>{
+    if(e.cost>0) h+=`<div class="line-item"><div><div class="name">${esc(e.name)}</div><div class="muted">${c.q} × ${rub(e.cost)}</div></div><div class="r name">${rub(e.cost*c.q)}</div></div>`;
+  });
+  h+=`<div class="tot"><span>Всего в магазин</span><span>${rub(c.cash)}</span></div>`;
+  const left=c.cash-c.use;
+  if(left>0.5) h+=`<div class="muted gap">Часть продуктов (на ${rub(left)}) останется после партии: упаковки целые. В себестоимость идёт только то, что использовано.</div>`;
+  return h;
+}
+function totalHTML(c){
+  const p1=S.price-c.per;
+  const markup=c.per>0?p1/c.per*100:0;
+  const row=(a,b,cls)=>`<div class="line-item"><span>${a}</span><b class="${cls||''}">${b}</b></div>`;
+  let h='';
+  if(!(S.price>0)) h+=`<div class="note">Впишите цену продажи 1 штуки вверху страницы, и здесь посчитается прибыль.</div>`;
+  h+=row('Количество',`${c.q} шт`);
+  h+=row('Цена продажи 1 шт',rub(S.price));
+  h+=row(`Выручка (${c.q} × ${rub(S.price)})`,rub(c.rev));
+  h+=row('Себестоимость 1 шт',rub(c.per));
+  h+=row('Себестоимость всей партии',rub(c.use));
+  h+=row('Прибыль с 1 шт',rub(p1),p1<0?'neg':'pos');
+  h+=row('Маржа',`${num(S.price>0?p1/S.price*100:0)}%`);
+  h+=row('Наценка к себестоимости',`${num(markup)}%`);
+  h+=row('Нужно вложить в закупку',rub(c.cash));
+  h+=`<div class="tot"><span>Прибыль со всей партии</span><span class="${c.profit<0?'neg':'pos'}">${rub(c.profit)}</span></div>`;
+  return h;
+}
+function recHTML(){
+  const target=Math.min(95,Math.max(0,S.margin));
+  const rec=cpp()/(1-target/100);
+  return `<span class="muted">Цена 1 шт для маржи ${num(target)}%</span><b>${rub(Math.ceil(rec/10)*10)}</b>`;
+}
+function resHTML(r){
+  const i=r.i;
+  if(r.bad) return `<div class="neg">Единицы не совпадают: выберите для фасовки меры того же вида (вес или объём).</div>`;
+  if(!r.packs) return `<div>Нужно <b>${fmtAmt(r.need,i.unit)}</b></div><div class="muted">Укажите фасовку, чтобы увидеть, сколько упаковок купить.</div>`;
+  return `<div>Нужно <b>${fmtAmt(r.need,i.unit)}</b></div>
+    <div>Фасовка ${num2(i.packSize)} ${i.packUnit}: купить <b>${r.packs} уп.</b> · ${rub(r.pay)}</div>
+    <div class="muted">В упаковках ${fmtAmt(r.bought,i.unit)}, останется ${fmtAmt(r.bought-r.need,i.unit)}</div>`;
+}
+function live(){
+  const c=calcAll();
+  const set=(id,h)=>{const el=document.getElementById(id);if(el)el.innerHTML=h};
+  set('bar',barHTML(c)); set('shop',shopHTML(c)); set('total',totalHTML(c)); set('rec',recHTML());
+  c.rows.forEach(r=>set('r-'+r.i.id,resHTML(r)));
+  const tc=document.getElementById('cost1'); if(tc)tc.textContent=rub(c.per);
+  save();
+}
+
+/* ---------- экраны ---------- */
+function viewCalc(){
+  const c=calcAll();
+  const oq=openO().reduce((a,o)=>a+o.qty,0);
+  let h=`
+  <div class="card">
+    <div class="g2">
+      <div><label>Сколько штук делаем</label><input class="bigin" type="number" inputmode="numeric" min="0" value="${S.batch}" data-ch="set" data-f="batch"></div>
+      <div><label>Цена продажи 1 шт, ₽</label><input class="bigin" type="number" inputmode="decimal" min="0" value="${S.price}" data-ch="set" data-f="price"></div>
+    </div>
+    ${oq>0?`<div class="gap"><button class="btn ghost small" data-act="fromOrders">Взять из заказов: ${oq} шт</button></div>`:''}
+  </div>
+
+  <div class="bar" id="bar">${barHTML(c)}</div>
+
+  <h2>Что купить</h2>
+  <div class="card" id="shop">${shopHTML(c)}</div>
+
+  <h2>Состав на 1 штуку</h2>
+  <div class="note">Добавьте продукты и впишите: сколько уходит на одну штуку, какая у упаковки фасовка (мг, г, кг, мл, л или шт) и сколько она стоит. Для каждого продукта фасовка своя. Всё пересчитается сразу.</div>`;
+  c.rows.forEach(r=>{
+    const i=r.i;
+    h+=`<div class="card">
+      <div class="namerow">
+        <input style="font-weight:700" value="${esc(i.name)}" placeholder="Название продукта" data-ch="ing" data-id="${i.id}" data-f="name" aria-label="Название продукта">
+        <button class="x" data-act="delIng" data-id="${i.id}" aria-label="Удалить">×</button>
+      </div>
+      <div class="gap"><label>Сколько уходит на 1 штуку</label>
+        <div class="pair"><input type="number" inputmode="decimal" min="0" value="${i.per}" data-ch="ing" data-id="${i.id}" data-f="per" aria-label="Расход на 1 штуку">
+        <select data-ch="ing" data-id="${i.id}" data-f="unit" aria-label="Единица расхода">${UNITS.map(u=>`<option ${u===i.unit?'selected':''}>${u}</option>`).join('')}</select></div></div>
+      <div class="gap"><label>Фасовка: сколько в одной упаковке</label>
+        <div class="pair"><input type="number" inputmode="decimal" min="0" value="${i.packSize}" data-ch="ing" data-id="${i.id}" data-f="packSize" aria-label="Размер упаковки">
+        <select data-ch="ing" data-id="${i.id}" data-f="packUnit" aria-label="Единица фасовки">${famUnits(i.unit).map(u=>`<option ${u===i.packUnit?'selected':''}>${u}</option>`).join('')}</select></div></div>
+      <div class="gap"><label>Цена одной упаковки, ₽</label><input type="number" inputmode="decimal" min="0" value="${i.packPrice}" data-ch="ing" data-id="${i.id}" data-f="packPrice"></div>
+      <div class="buy" id="r-${i.id}">${resHTML(r)}</div>
+    </div>`;
+  });
+  if(!c.rows.length) h+=`<div class="empty">Продуктов пока нет. Нажмите «Добавить продукт» и впишите, что входит в изделие.</div>`;
+  h+=`<button class="btn ghost" data-act="addIng">Добавить продукт</button>
+
+  <h2>Прочие расходы на 1 шт</h2>`;
+  S.extras.forEach(e=>{
+    h+=`<div class="card"><div class="namerow" style="grid-template-columns:2fr 1fr 32px">
+      <input value="${esc(e.name)}" data-ch="ext" data-id="${e.id}" data-f="name" aria-label="Название">
+      <input type="number" inputmode="decimal" min="0" value="${e.cost}" data-ch="ext" data-id="${e.id}" data-f="cost" aria-label="Сумма, ₽">
+      <button class="x" data-act="delExt" data-id="${e.id}" aria-label="Удалить">×</button></div></div>`;
+  });
+  h+=`<button class="btn ghost" data-act="addExt">Добавить расход</button>
+
+  <h2>Итог: продажа и прибыль</h2>
+  <div class="card" id="total">${totalHTML(c)}</div>
+
+  <h2>Какая цена нужна</h2>
+  <div class="card">
+    <div class="top"><span class="muted">Себестоимость 1 шт</span><b id="cost1">${rub(c.per)}</b></div>
+    <div class="gap"><label>Нужная маржа, %</label><input type="number" inputmode="decimal" min="0" max="95" value="${S.margin}" data-ch="set" data-f="margin"></div>
+    <div class="top gap" id="rec">${recHTML()}</div>
+  </div>
+  <footer>
+    <button class="btn line small" data-act="backup">Скопировать копию данных</button>
+    <button class="btn line small" data-act="restore">Восстановить</button>
+  </footer>
+  <p class="muted">Данные хранятся в этом браузере на телефоне. Чтобы перенести их на другое устройство, скопируйте копию и вставьте при восстановлении.</p>`;
+  return h;
+}
+
+function viewOrders(){
+  const t=sums(openO());
+  let h=`
+  <div class="bar">
+    <div class="lab">Ожидаемая прибыль по заказам в работе</div>
+    <div class="big ${t.profit<0?'neg':''}">${rub(t.profit)}</div>
+    <div class="row3">
+      <div><b>${t.q}</b><span>штук</span></div>
+      <div><b>${rub(t.rev)}</b><span>выручка</span></div>
+      <div><b>${rub(t.cost)}</b><span>себестоимость</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="g2">
+      <div><label>Кто заказал</label><input id="o-name" placeholder="Имя"></div>
+      <div><label>Дата</label><input id="o-date" type="date" value="${todayISO()}"></div>
+    </div>
+    <div class="g2 gap">
+      <div><label>Штук</label><input id="o-qty" type="number" inputmode="numeric" min="1" value="1"></div>
+      <div><label>Цена за штуку, ₽</label><input id="o-price" type="number" inputmode="decimal" min="0" value="${S.price}"></div>
+    </div>
+    <div class="gap"><button class="btn" data-act="addOrder">Добавить заказ</button></div>
+  </div>
+  <h2>В работе</h2>`;
+  const open=openO();
+  if(!open.length) h+=`<div class="empty">Заказов в работе нет. Добавьте первый заказ выше.</div>`;
+  else h+=`<div class="gap" style="margin:0 0 10px"><button class="btn ghost" data-act="fromOrders">Посчитать закупку на ${t.q} шт</button></div>`;
+  open.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(o=>h+=orderCard(o));
+  const d=doneO(), td=sums(d);
+  h+=`<h2>Выполнено</h2>`;
+  if(!d.length) h+=`<div class="empty">Здесь появятся выполненные заказы и реальная прибыль.</div>`;
+  else{
+    h+=`<div class="card"><div class="top"><span class="muted">Заказов: ${d.length}, штук: ${td.q}</span><span class="pos">Прибыль ${rub(td.profit)}</span></div>
+    <div class="muted">Выручка ${rub(td.rev)}, себестоимость ${rub(td.cost)}</div>
+    <div class="acts"><button class="btn line small" data-act="toggleDone">${showDone?'Скрыть список':'Показать список'}</button></div></div>`;
+    if(showDone) d.slice().reverse().forEach(o=>h+=orderCard(o));
+  }
+  return h;
+}
+function orderCard(o){
+  const profit=o.qty*(o.price-cpp());
+  return `<div class="card ${o.done?'done':''}">
+    <div class="top"><span class="name">${esc(o.name||'Без имени')}</span><span class="muted">${dm(o.date)}</span></div>
+    <div class="g2 gap">
+      <div><label>Штук</label><input type="number" inputmode="numeric" min="1" value="${o.qty}" data-ch="order" data-id="${o.id}" data-f="qty"></div>
+      <div><label>Цена за штуку, ₽</label><input type="number" inputmode="decimal" min="0" value="${o.price}" data-ch="order" data-id="${o.id}" data-f="price"></div>
+    </div>
+    <div class="top gap"><span>Сумма <b>${rub(o.qty*o.price)}</b></span><span class="${profit>=0?'pos':'neg'}">прибыль ${rub(profit)}</span></div>
+    <div class="acts">
+      <button class="btn ${o.done?'line':''} small" data-act="toggleOrder" data-id="${o.id}">${o.done?'Вернуть в работу':'Готово, выдано'}</button>
+      <button class="btn line small" data-act="delOrder" data-id="${o.id}">Удалить</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- отрисовка и события ---------- */
+const view=document.getElementById('view');
+function render(){
+  view.innerHTML= tab==='calc'?viewCalc():viewOrders();
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  save();
+}
+document.querySelector('nav').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  tab=b.dataset.tab;render();window.scrollTo(0,0);
+});
+
+function applyField(t){
+  const kind=t.dataset.ch, f=t.dataset.f, id=t.dataset.id;
+  const numeric=!['name','unit','packUnit'].includes(f);
+  const v=numeric?val(t.value):t.value;
+  if(kind==='set'){S[f]=(f==='batch')?Math.round(v):v}
+  else if(kind==='order'){const o=S.orders.find(x=>x.id===id);if(o)o[f]=(f==='qty'?Math.max(1,Math.round(v)):v)}
+  else if(kind==='ing'){const i=S.ingredients.find(x=>x.id===id);if(i){i[f]=v;if(f==='unit'&&!okUnits(i))i.packUnit=i.unit}}
+  else if(kind==='ext'){const x=S.extras.find(x=>x.id===id);if(x)x[f]=v}
+}
+view.addEventListener('input',e=>{
+  const t=e.target; if(!t.dataset.ch||tab!=='calc'||t.tagName!=='INPUT')return;
+  applyField(t); live();
+});
+view.addEventListener('change',e=>{
+  const t=e.target; if(!t.dataset.ch)return;
+  if(tab==='calc'&&t.tagName==='INPUT')return;
+  applyField(t); render();
+});
+
+view.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b) return;
+  const a=b.dataset.act, id=b.dataset.id;
+  if(a==='addOrder'){
+    const qty=Math.max(1,Math.round(val(document.getElementById('o-qty').value)));
+    const price=val(document.getElementById('o-price').value);
+    S.orders.push({id:uid(),name:document.getElementById('o-name').value.trim(),date:document.getElementById('o-date').value||todayISO(),qty,price,done:false});
+  }
+  else if(a==='fromOrders'){S.batch=openO().reduce((x,o)=>x+o.qty,0);tab='calc';render();window.scrollTo(0,0);return}
+  else if(a==='toggleOrder'){const o=S.orders.find(x=>x.id===id);if(o)o.done=!o.done}
+  else if(a==='delOrder'){if(confirm('Удалить заказ?'))S.orders=S.orders.filter(x=>x.id!==id);else return}
+  else if(a==='toggleDone'){showDone=!showDone}
+  else if(a==='addIng'){S.ingredients.push({id:uid(),name:'Продукт',unit:'г',packSize:0,packUnit:'г',packPrice:0,per:0})}
+  else if(a==='delIng'){if(confirm('Удалить продукт из состава?'))S.ingredients=S.ingredients.filter(x=>x.id!==id);else return}
+  else if(a==='addExt'){S.extras.push({id:uid(),name:'Расход',cost:0})}
+  else if(a==='delExt'){S.extras=S.extras.filter(x=>x.id!==id)}
+  else if(a==='backup'){
+    const txt=JSON.stringify(S);
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(()=>alert('Копия данных скопирована. Сохраните её в заметках или отправьте себе в мессенджер.'),()=>prompt('Скопируйте текст:',txt))}
+    else prompt('Скопируйте текст:',txt);
+    return;
+  }
+  else if(a==='restore'){
+    const t=prompt('Вставьте копию данных:');
+    if(!t)return;
+    try{const d=JSON.parse(t);if(d&&d.ingredients&&d.orders){S=d;if(typeof S.batch!=='number')S.batch=0;if(typeof S.margin!=='number')S.margin=0;migrate()}else throw 0}catch(_){alert('Не получилось прочитать копию. Проверьте, что вставили весь текст.');return}
+  }
+  render();
+});
+
+document.addEventListener('focusin',e=>{const t=e.target;if(t.tagName==='INPUT'&&t.type==='number'){setTimeout(()=>{try{t.select()}catch(_){}},0)}});
+migrate();
+render();
+</script>
+</body>
+</html>
